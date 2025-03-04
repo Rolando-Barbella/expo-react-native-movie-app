@@ -1,8 +1,13 @@
 # Movie app 🎬
 
-An app that displays a list of movies, like and dislike them, it works smooth on Android and IOS
+An app that displays a list of movies, favorite and unfavorited them, it works smoothly on Android and IOS
 
 This is an [Expo](https://expo.dev) react native project
+
+<p align="center">
+  <img src="https://reactnative.dev/img/header_logo.svg" alt="React JS" width="60"/>
+  <img src="https://cdn.brandfetch.io/idzGRYC3u5/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1667740799142" alt="Expo" width="60"/>
+</p>
 
 Live URL for Android [here](https://appetize.io/app/b_t5ya7htkrlcjnvxwyph3xw4phm)
 
