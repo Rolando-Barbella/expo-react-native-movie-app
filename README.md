@@ -3,13 +3,12 @@
 This is an [Expo](https://expo.dev) project
 
 
-![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-1.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-1.png" width="30%" />
+  <img src="https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-2.png" width="30%" />
+  <img src="https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-3.png" width="30%" />
+</p>
 
-
-![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-2.png)
-
-
-![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-3.png)
 
 
 
