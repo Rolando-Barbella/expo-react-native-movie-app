@@ -3,7 +3,8 @@
 This is an [Expo](https://expo.dev) project
 
 
-![screen](https://github.com/Rolando-Barbella/expo-react-native-movie-app/tree/main/assets/images/image-1.png)
+![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-1.png)
+
 
 ![screen](https://github.com/Rolando-Barbella/expo-react-native-movie-app/tree/main/assets/images/image-2.png)
 
