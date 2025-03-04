@@ -27,12 +27,4 @@ This is an [Expo](https://expo.dev) project
 
 Live url for Android (here)[https://appetize.io/app/b_t5ya7htkrlcjnvxwyph3xw4phm]
 
-*I don't have a paid apple account to uploads for IOS as well, sorry
 
-### Comments
-
-The app is design as it is describe in the instructions with maybe slight variations so it can make sense, stlyed components
-
-
-
-> Expo creates a lot of files by default, the ones done by self are only related to: app/(tabs)/index.tsx
