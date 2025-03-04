@@ -1,6 +1,10 @@
 # Movie app 🎬
 
-This is an [Expo](https://expo.dev) project
+An app that displays a list of movies, like and dislike them, it works smooth on Android and IOS
+
+This is an [Expo](https://expo.dev) react native project
+
+Live URL for Android [here](https://appetize.io/app/b_t5ya7htkrlcjnvxwyph3xw4phm)
 
 
 ![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-3.png)
@@ -10,12 +14,6 @@ This is an [Expo](https://expo.dev) project
 
 
 ![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-2.png)
-
-
-
-
-
-Live URL for Android [here](https://appetize.io/app/b_t5ya7htkrlcjnvxwyph3xw4phm)
 
 
 ## Get started
