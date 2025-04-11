@@ -5,6 +5,7 @@ import MovieCarousel from '../../components/MovieCarusel';
 import { API_KEY, BASE_URL } from '../config';
 import { NavigationProp } from '@react-navigation/native';
 import { Genre, Movie } from '../types';
+import { Colors } from '../../constants/Colors';
 
 const HomeScreen = ({ navigation } : {navigation: NavigationProp<{
   Detail: { movie: Movie, genre: Genre };
@@ -74,7 +75,7 @@ const getMovies = async () => {
   if (loading) {
     return (
       <CenterContainer testID='container'>
-        <ActivityIndicator size="large" color="#0000ff" testID='loading-indicator'/>
+        <ActivityIndicator size="large" color={Colors.dark.tint} testID='loading-indicator'/>
       </CenterContainer>
     );
   }
@@ -106,18 +107,18 @@ const getMovies = async () => {
 
 const Container = styled.ScrollView`
   flex: 1;
-  background-color: #000;
+  background-color: ${Colors.dark.hardcore.primary};
 `;
 
 const CenterContainer = styled.View`
   flex: 1;
   justify-content: center;
   align-items: center;
-  background-color: #000;
+  background-color: ${Colors.dark.hardcore.primary};
 `;
 
 const ErrorText = styled.Text`
-  color: #fff;
+  color: ${Colors.dark.hardcore.text};
   font-size: 16px;
   text-align: center;
   margin-bottom: 20px;
@@ -125,12 +126,12 @@ const ErrorText = styled.Text`
 
 const RetryButton = styled.TouchableOpacity`
   padding: 10px;
-  background-color: #0000ff;
+  background-color: ${Colors.dark.tint};
   border-radius: 5px;
 `;
 
 const RetryText = styled.Text`
-  color: #fff;
+  color: ${Colors.dark.hardcore.text};
   font-size: 16px;
 `;
 

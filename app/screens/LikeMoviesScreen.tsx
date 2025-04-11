@@ -36,6 +36,7 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
       setFavorites(data?.results);
     } catch (error) {
       console.error('Error fetching favorites:', error);
+      setFavorites([]);
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +72,7 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
   if (isLoading) {
     return (
       <LoadingContainer>
-        <ActivityIndicator size="large" color="#fff" testID="loading-indicator" />
+        <ActivityIndicator size="large" color={Colors.dark.tint} testID="loading-indicator" />
       </LoadingContainer>
     );
   }
@@ -84,7 +85,7 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
       </HeaderContainer>
       {favorites.length === 0 ? (
         <EmptyStateContainer>
-          <Ionicons name="heart-outline" size={64} color="#666" />
+          <Ionicons name="heart-outline" size={64} color={Colors.dark.hardcore.emptyState} />
           <EmptyText>No favorite movies yet</EmptyText>
         </EmptyStateContainer>
       ) : (

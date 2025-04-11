@@ -18,6 +18,7 @@ import { useFonts } from 'expo-font';
 import { API_KEY } from '../config';
 import { Movie } from '../types';
 import { NavigationProp } from '@react-navigation/native';
+import { Colors } from '../../constants/Colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -102,7 +103,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   };
 
   if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#fff" />;
+    return <ActivityIndicator size="large" color={Colors.dark.tint} />;
   }
 
   const getStyleConfig = () => {
@@ -145,10 +146,10 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         />
         <View style={styles.overlay} />
         <IconButton
-          style={{ position: 'absolute', top: 16, left: 16 }}
+          style={styles.iconButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={Colors.dark.hardcore.text} />
         </IconButton>
       </View>
 
@@ -167,14 +168,28 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
             <Ionicons
               name={isWishlisted ? "heart" : "heart-outline"}
               size={24}
-              color={isWishlisted ? "#ff4757" : "#fff"}
+              color={isWishlisted ? Colors.dark.hardcore.favorite : Colors.dark.hardcore.text}
             />
           </IconButton>
         </Row>
 
         <Row>
-          <Ionicons name="star" size={16} color="#ffd700" />
-          <RegularText>{movie.vote_average?.toFixed(1)} / 10</RegularText>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {[...Array(5)].map((_, index) => {
+              const rating = movie.vote_average / 2;
+              const starValue = index + 1;
+              return (
+                <Ionicons
+                  key={index}
+                  name={rating >= starValue ? "star" : rating >= starValue - 0.5 ? "star-half" : "star-outline"}
+                  size={16}
+                  color={Colors.dark.hardcore.accent}
+                  style={{ marginRight: 2 }}
+                />
+              );
+            })}
+            <RegularText style={{ marginLeft: 4 }}>{movie.vote_average?.toFixed(1)} / 10</RegularText>
+          </View>
         </Row>
 
         <Section>
@@ -204,7 +219,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
 
 export const Container = styled.SafeAreaView`
   flex: 1;
-  background-color: #0F111D;
+  background-color: ${Colors.dark.hardcore.primary};
 `;
 
 const StyledScrollView = styled.ScrollView`
@@ -228,7 +243,7 @@ export const Row = styled.View`
 export const Title = styled.Text`
   font-size: 24px;
   font-weight: bold;
-  color: #FFFFFF;
+  color: ${Colors.dark.hardcore.text};
   margin-bottom: 4px;
   ${(props: { font: string; }) => props.font && `font-family: ${props.font}`};
 `;
@@ -236,25 +251,25 @@ export const Title = styled.Text`
 export const SectionTitle = styled.Text`
   font-size: 18px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: ${Colors.dark.hardcore.text};
   margin-bottom: 8px;
 `;
 
 export const RegularText = styled.Text`
   font-size: 16px;
-  color: ${(props: { secondary: string; }) => props.secondary ? '#9CA3AF' : '#FFFFFF'};
+  color: ${(props: { secondary: string; }) => props.secondary ? Colors.dark.hardcore.textSecondary : Colors.dark.hardcore.text};
 `;
 
 export const BodyText = styled.Text`
   font-size: 16px;
   line-height: 24px;
-  color: #D1D5DB;
+  color: ${Colors.dark.hardcore.text};
 `;
 
 export const IconButton = styled.TouchableOpacity`
   padding: 12px;
   border-radius: 25px;
-  background-color: ${(props: { active: boolean; }) => props.active ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+  background-color: ${(props: { active: boolean; }) => props.active ? `rgba(${parseInt(Colors.dark.hardcore.favorite.slice(1, 3), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(3, 5), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(5, 7), 16)}, 0.2)` : 'rgba(255, 255, 255, 0.1)'};
 `;
 
 
@@ -285,6 +300,7 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  iconButton: { position: 'absolute', top: 16, left: 16 }
 });
 
 export default DetailScreen;
