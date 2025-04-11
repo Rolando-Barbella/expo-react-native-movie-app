@@ -8,7 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import styled from 'styled-components/native';
 import { API_KEY, LIKE_MOVIES_URL } from '../config';
 import { Movie } from '../types';
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationProp, useFocusEffect } from '@react-navigation/native';
 
 type LikeMoviesScreenProps = {
   navigation: NavigationProp<{
@@ -20,9 +20,11 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFavoriteMovies();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchFavoriteMovies();
+    }, [])
+  );
 
   const fetchFavoriteMovies = async () => {
     try {
