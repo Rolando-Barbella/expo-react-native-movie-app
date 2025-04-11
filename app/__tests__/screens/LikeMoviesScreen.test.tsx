@@ -53,7 +53,7 @@ describe('<LikeMoviesScreen />', () => {
     global.fetch = jest.fn() as jest.Mock;
   });
 
-  it('shows the loading state initially', () => {
+  it('shows the loading state initially', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: mockMovies }),
@@ -62,7 +62,9 @@ describe('<LikeMoviesScreen />', () => {
     const { getByTestId } = renderWithNavigation(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
-    expect(getByTestId('loading-indicator')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByTestId('loading-indicator')).toBeTruthy();
+    });
   });
 
   it('shows empty state when there are no favorite movies', async () => {
@@ -120,6 +122,10 @@ describe('<LikeMoviesScreen />', () => {
   });
 
   it('handles API errors gracefully', async () => {
+    // Mock console.error to prevent the error from being displayed in test output
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
+    
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
   
     const { getByText } = renderWithNavigation(
@@ -131,6 +137,9 @@ describe('<LikeMoviesScreen />', () => {
     });
   
     expect(global.fetch).toHaveBeenCalledTimes(1);
+    
+    // Restore original console.error
+    console.error = originalConsoleError;
   });
 });
 

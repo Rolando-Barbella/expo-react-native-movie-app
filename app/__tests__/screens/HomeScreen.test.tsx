@@ -36,7 +36,14 @@ const mockNavigation = {
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global.fetch as jest.Mock) = jest.fn() as jest.Mock; ;
+    (global.fetch as jest.Mock) = jest.fn() as jest.Mock;
+    // Mock console.error to prevent error logs during tests
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console.error after each test
+    jest.restoreAllMocks();
   });
 
   it('renders loading indicator while fetching data', async () => {
