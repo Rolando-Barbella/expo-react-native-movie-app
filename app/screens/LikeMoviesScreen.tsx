@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StatusBar,
   ActivityIndicator,
@@ -9,6 +9,7 @@ import styled from 'styled-components/native';
 import { API_KEY, LIKE_MOVIES_URL } from '../config';
 import { Movie } from '../types';
 import { NavigationProp, useFocusEffect } from '@react-navigation/native';
+import { Colors } from '../../constants/Colors';
 
 type LikeMoviesScreenProps = {
   navigation: NavigationProp<{
@@ -19,12 +20,6 @@ type LikeMoviesScreenProps = {
 const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchFavoriteMovies();
-    }, [])
-  );
 
   const fetchFavoriteMovies = async () => {
     try {
@@ -37,14 +32,20 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
           }
         }
       );
-      const data = await response.json();
-      setFavorites(data.results);
+      const data = await response?.json();
+      setFavorites(data?.results);
     } catch (error) {
       console.error('Error fetching favorites:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchFavoriteMovies();
+    }, [])
+  );
 
   const getImagePath = (path: string) => {
     return `https://image.tmdb.org/t/p/w500${path}`;
@@ -103,20 +104,20 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
 
 export const Container = styled.SafeAreaView`
   flex: 1;
-  background-color: #000;
+  background-color: ${Colors.dark.hardcore.primary};
 `;
 
 export const LoadingContainer = styled.View`
   flex: 1;
   justify-content: center;
   align-items: center;
-  background-color: #000;
+  background-color: ${Colors.dark.hardcore.primary};
 `;
 
 export const HeaderContainer = styled.View`
   padding: 16px;
   border-bottom-width: 1px;
-  border-bottom-color: #333;
+  border-bottom-color: ${Colors.dark.hardcore.border};
 `;
 
 export const EmptyStateContainer = styled.View`
@@ -128,11 +129,11 @@ export const EmptyStateContainer = styled.View`
 export const MovieCard = styled.TouchableOpacity`
   flex: 1;
   margin: 8px;
-  background-color: #111;
+  background-color: ${Colors.dark.hardcore.card};
   border-radius: 12px;
   overflow: hidden;
   elevation: 5;
-  shadow-color: #000;
+  shadow-color: ${Colors.dark.hardcore.primary};
   shadow-offset: 0px 2px;
   shadow-opacity: 0.25;
   shadow-radius: 3.84px;
@@ -150,13 +151,13 @@ export const MovieInfo = styled.View`
 export const HeaderTitle = styled.Text`
   font-size: 24px;
   font-weight: bold;
-  color: #fff;
+  color: ${Colors.dark.hardcore.text};
 `;
 
 export const MovieTitle = styled.Text`
   font-size: 16px;
   font-weight: bold;
-  color: #fff;
+  color: ${Colors.dark.hardcore.text};
   margin-bottom: 4px;
 `;
 
@@ -167,17 +168,17 @@ export const RatingContainer = styled.View`
 `;
 
 export const RatingText = styled.Text`
-  color: #fff;
+  color: ${Colors.dark.hardcore.text};
   margin-left: 4px;
 `;
 
 export const ReleaseDate = styled.Text`
-  color: #888;
+  color: ${Colors.dark.hardcore.textSecondary};
   font-size: 14px;
 `;
 
 export const EmptyText = styled.Text`
-  color: #666;
+  color: ${Colors.dark.hardcore.emptyState};
   font-size: 18px;
   margin-top: 16px;
 `;

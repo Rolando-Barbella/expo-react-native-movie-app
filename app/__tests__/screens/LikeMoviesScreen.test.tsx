@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import LikeMoviesScreen from '../../screens/LikeMoviesScreen';
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationProp, NavigationContainer } from '@react-navigation/native';
 import { Genre, Movie } from '@/app/types';
 
 const mockNavigation = {
@@ -39,10 +39,18 @@ const mockMovies = [
   },
 ];
 
+const renderWithNavigation = (component: React.ReactElement) => {
+  return render(
+    <NavigationContainer>
+      {component}
+    </NavigationContainer>
+  );
+};
+
 describe('<LikeMoviesScreen />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn() as jest.Mock; ;
+    global.fetch = jest.fn() as jest.Mock;
   });
 
   it('shows the loading state initially', () => {
@@ -51,7 +59,9 @@ describe('<LikeMoviesScreen />', () => {
       json: async () => ({ results: mockMovies }),
     });
 
-    const { getByTestId } = render(<LikeMoviesScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithNavigation(
+      <LikeMoviesScreen navigation={mockNavigation} />
+    );
     expect(getByTestId('loading-indicator')).toBeTruthy();
   });
 
@@ -61,7 +71,9 @@ describe('<LikeMoviesScreen />', () => {
       json: async () => ({ results: [] }),
     });
   
-    const { getByText } = render(<LikeMoviesScreen navigation={mockNavigation} />);
+    const { getByText } = renderWithNavigation(
+      <LikeMoviesScreen navigation={mockNavigation} />
+    );
   
     await waitFor(() => {
       expect(getByText('No favorite movies yet')).toBeTruthy();
@@ -74,7 +86,7 @@ describe('<LikeMoviesScreen />', () => {
       json: async () => ({ results: mockMovies }),
     });
 
-    const { getByText} = render(
+    const { getByText } = renderWithNavigation(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
 
@@ -92,7 +104,9 @@ describe('<LikeMoviesScreen />', () => {
       json: async () => ({ results: mockMovies }),
     });
   
-    const { getByText } = render(<LikeMoviesScreen navigation={mockNavigation} />);
+    const { getByText } = renderWithNavigation(
+      <LikeMoviesScreen navigation={mockNavigation} />
+    );
   
     await waitFor(() => expect(getByText('Movie 1')).toBeTruthy());
   
@@ -104,10 +118,13 @@ describe('<LikeMoviesScreen />', () => {
       });
     });
   });
+
   it('handles API errors gracefully', async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
   
-    const { getByText } = render(<LikeMoviesScreen navigation={mockNavigation} />);
+    const { getByText } = renderWithNavigation(
+      <LikeMoviesScreen navigation={mockNavigation} />
+    );
   
     await waitFor(() => {
       expect(getByText('No favorite movies yet')).toBeTruthy();
