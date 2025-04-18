@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Movie } from '../types';
+import { Movie, PendingAction } from '../types';
 import { NavigationProp } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,56 +26,12 @@ type DetailScreenProps = {
   route: any;
 };
 
-interface PendingAction {
-  type: string;
-  movieId: number;
-  status: boolean;
-  timestamp: number;
-}
-
 const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   const { movie } = route.params;
   const queryClient = useQueryClient();
   const { isConnected } = useNetwork();
 
-  // Add this effect to sync pending actions when online
-  React.useEffect(() => {
-    const syncPendingActions = async () => {
-      if (!isConnected) return;
-      
-      // Get pending actions
-      const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
-      if (pendingActions.length === 0) return;
-      
-      // Process each action
-      let updatedPendingActions = [...pendingActions];
-      for (let i = 0; i < pendingActions.length; i++) {
-        const action = pendingActions[i];
-        if (action.type === 'toggleFavorite') {
-          try {
-            await toggleFavorite(action.movieId, action.status);
-            // Remove from pending list if successful
-            updatedPendingActions = updatedPendingActions.filter(a => 
-              !(a.type === action.type && a.movieId === action.movieId));
-            // Invalidate related queries to refresh data
-            if (action.movieId === movie.id) {
-              queryClient.invalidateQueries({
-                queryKey: ['favoriteStatus', movie.id]
-              });
-            }
-          } catch (error) {
-            console.error('Error syncing pending action:', error);
-          }
-        }
-      }
-      queryClient.setQueryData<PendingAction[]>(['pendingActions'], updatedPendingActions);
-    };
-    if (isConnected) {
-      syncPendingActions();
-    }
-  }, [isConnected, movie.id, queryClient]);
 
-  // Cache the movie details for potential offline use
   React.useEffect(() => {
     queryClient.setQueryData(['movieDetails', movie.id], movie);
   }, [movie, queryClient]);
@@ -157,16 +113,12 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
     toggleFavoriteMutation.mutate(newStatus);
   };
 
-  const getImagePath = (path: string) => {
-    return `https://image.tmdb.org/t/p/w500${path}`;
-  };
-
   return (
     <Container>
       <StatusBar barStyle="light-content" />
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: getImagePath(movie.backdrop_path || movie.poster_path) }}
+          source={{ uri: `https://image.tmdb.org/t/p/w500${movie.backdrop_path || movie.poster_path}` }}
           style={styles.backdropImage}
           resizeMode="cover"
         />

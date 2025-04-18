@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef, useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+import NetInfo from '@react-native-community/netinfo';
 
 interface NetworkContextType {
   isConnected: boolean;
@@ -13,7 +13,6 @@ export const NetworkContext = createContext<NetworkContextType>({
   showOnlineBanner: false,
 });
 
-// Custom hook to use the network context
 export const useNetwork = () => useContext(NetworkContext);
 
 interface NetworkProviderProps {
@@ -27,7 +26,6 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
   const onlineBannerTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener(state => {
       const newConnectionState = state.isConnected ?? true;
       
@@ -36,22 +34,17 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
         console.log('Connection restored, showing banner');
         setShowOnlineBanner(true);
         
-        // Clear any existing timer
         if (onlineBannerTimer.current) {
           clearTimeout(onlineBannerTimer.current);
         }
-        
-        // Hide the online banner after 3 seconds
+
         onlineBannerTimer.current = setTimeout(() => {
           console.log('Timer expired, hiding banner');
           setShowOnlineBanner(false);
         }, 3000);
       }
-      
-      // Update state and ref
       setIsConnected(newConnectionState);
       previousConnectionRef.current = newConnectionState;
-      console.log('Connection changed. Is connected?', newConnectionState);
     });
     
     // Initial check
@@ -61,7 +54,6 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
       previousConnectionRef.current = initialConnectionState;
     });
     
-    // Cleanup function to unsubscribe when component unmounts
     return () => {
       unsubscribe();
       if (onlineBannerTimer.current) {

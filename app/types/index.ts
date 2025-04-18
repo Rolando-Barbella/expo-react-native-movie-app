@@ -16,3 +16,11 @@ export type Genre = {
   id: number;
   name: string;
 }
+
+
+export type PendingAction = {
+  type: string;
+  movieId: number;
+  status: boolean;
+  timestamp: number;
+}

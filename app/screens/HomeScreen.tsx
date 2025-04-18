@@ -11,7 +11,6 @@ import { getGenres, getMovies } from '../lib/api';
 const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
   Detail: { movie: Movie; genre: Genre };
 }> }) => {
-  // Fetch genres with React Query
   const {
     data: genresData,
     isLoading: genresLoading,
@@ -20,7 +19,7 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
   } = useQuery<Genre[]>({
     queryKey: ['genres'],
     queryFn: getGenres,
-    select: (data) => data.slice(0, 3), // Only keep first 3 genres
+    select: (data) => data.slice(0, 3),
   });
 
   const {
@@ -37,11 +36,22 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
   const isLoading = genresLoading || moviesLoading;
   const error = genresError || moviesError;
 
-
   const refetchAll = () => {
     refetchGenres();
     refetchMovies();
   };
+
+   // If we have cached data but no network, show cached data with warning
+   if ((!genresData?.length || !moviesData?.length) && !isLoading) {
+    return (
+      <CenterContainer testID='container'>
+        <ErrorText>No data available. Please check your connection.</ErrorText>
+        <RetryButton onPress={refetchAll}>
+          <RetryText>Retry</RetryText>
+        </RetryButton>
+      </CenterContainer>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -57,18 +67,6 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
         <ErrorText>{
           error.message || 'Failed to load data. Please try again.'
         }</ErrorText>
-        <RetryButton onPress={refetchAll}>
-          <RetryText>Retry</RetryText>
-        </RetryButton>
-      </CenterContainer>
-    );
-  }
-
-  // If we have cached data but no network, show cached data with warning
-  if (!genresData?.length || !moviesData?.length && !isLoading) {
-    return (
-      <CenterContainer testID='container'>
-        <ErrorText>No data available. Please check your connection.</ErrorText>
         <RetryButton onPress={refetchAll}>
           <RetryText>Retry</RetryText>
         </RetryButton>
