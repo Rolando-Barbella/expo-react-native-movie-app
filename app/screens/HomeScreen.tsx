@@ -1,78 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ActivityIndicator} from 'react-native';
 import styled from 'styled-components/native';
 import MovieCarousel from '../../components/MovieCarusel';
-import { API_KEY, BASE_URL } from '../config';
 import { NavigationProp } from '@react-navigation/native';
 import { Genre, Movie } from '../types';
 import { Colors } from '../../constants/Colors';
+import { useQuery } from '@tanstack/react-query';
+import { getGenres, getMovies } from '../lib/api';
 
-const HomeScreen = ({ navigation } : {navigation: NavigationProp<{
-  Detail: { movie: Movie, genre: Genre };
-}>}) => {
+const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
+  Detail: { movie: Movie; genre: Genre };
+}> }) => {
+  // Fetch genres with React Query
+  const {
+    data: genresData,
+    isLoading: genresLoading,
+    error: genresError,
+    refetch: refetchGenres,
+  } = useQuery<Genre[]>({
+    queryKey: ['genres'],
+    queryFn: getGenres,
+    select: (data) => data.slice(0, 3), // Only keep first 3 genres
+  });
 
-  const [genres, setGenres] = useState([]);
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: moviesData,
+    isLoading: moviesLoading,
+    error: moviesError,
+    refetch: refetchMovies,
+  } = useQuery<Movie[]>({
+    queryKey: ['movies'],
+    queryFn: getMovies,
+  });
 
-const headers = {
-  'Authorization': `Bearer ${API_KEY}`,
-  'Content-Type': 'application/json'
-};
 
-const getGenres = async () => {
-  try {
-    const response = await fetch(`${BASE_URL}/genre/movie/list?language=en`, { headers });
-    if (!response.ok) throw new Error('Network response was not ok');
-    const data = await response.json();
-    return data.genres;
-  } catch (error) {
-    console.error('Error fetching genres:', error);
-    throw error;
-  }
-};
+  const isLoading = genresLoading || moviesLoading;
+  const error = genresError || moviesError;
 
-const getMovies = async () => {
-  try {
-    const response = await fetch(
-      `${BASE_URL}/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc`,
-      { headers }
-    );
-    if (!response.ok) throw new Error('Network response was not ok');
-    const data = await response.json();
-    return data.results;
-  } catch (error) {
-    console.error('Error fetching movies:', error);
-    throw error;
-  }
-};
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const [genresData, moviesData] = await Promise.all([
-        getGenres(),
-        getMovies()
-      ]);
-      
-      setGenres(genresData.slice(0, 3));
-      setMovies(moviesData);
-    } catch (error) {
-      setError('Failed to load data. Please try again.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const refetchAll = () => {
+    refetchGenres();
+    refetchMovies();
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <CenterContainer testID='container'>
         <ActivityIndicator size="large" color={Colors.dark.tint} testID='loading-indicator'/>
@@ -83,8 +54,22 @@ const getMovies = async () => {
   if (error) {
     return (
       <CenterContainer testID='container'>
-        <ErrorText>{error}</ErrorText>
-        <RetryButton onPress={loadData}>
+        <ErrorText>{
+          error.message || 'Failed to load data. Please try again.'
+        }</ErrorText>
+        <RetryButton onPress={refetchAll}>
+          <RetryText>Retry</RetryText>
+        </RetryButton>
+      </CenterContainer>
+    );
+  }
+
+  // If we have cached data but no network, show cached data with warning
+  if (!genresData?.length || !moviesData?.length && !isLoading) {
+    return (
+      <CenterContainer testID='container'>
+        <ErrorText>No data available. Please check your connection.</ErrorText>
+        <RetryButton onPress={refetchAll}>
           <RetryText>Retry</RetryText>
         </RetryButton>
       </CenterContainer>
@@ -93,11 +78,11 @@ const getMovies = async () => {
 
   return (
     <Container testID='container'>
-      {genres.map((genre: Genre) => (
+      {genresData?.map((genre: Genre) => (
         <MovieCarousel
           key={genre.id}
           genre={genre}
-          movies={movies.filter((movie: Movie) => movie.genre_ids.includes(genre.id))}
+          movies={moviesData?.filter((movie: Movie) => movie.genre_ids.includes(genre.id)) || []}
           navigation={navigation}
         />
       ))}

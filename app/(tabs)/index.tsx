@@ -10,34 +10,32 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={({ navigation }) => ({
-            title: 'Movies App',
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={() => navigation.navigate('LikeMovies')}
-                style={{ marginRight: 15 }}
-              >
-                <Ionicons name="heart-outline" size={24} color="black" />
-              </TouchableOpacity>
-            ),
-          })}
-        />
-        <Stack.Screen
-          name="Detail"
-          component={DetailScreen}
-          options={{ title: 'Movie Details' }}
-        />
-        <Stack.Screen
-          name="LikeMovies"
-          component={LikeMoviesScreen}
-          options={{ title: 'Favorite Movies' }}
-        />
-      </Stack.Navigator>
-    </>
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={({ navigation }) => ({
+          title: 'Movies App',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('LikeMovies')}
+              style={{ marginRight: 15 }}
+            >
+              <Ionicons name="heart-outline" size={24} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="Detail"
+        component={DetailScreen}
+        options={{ title: 'Movie Details' }}
+      />
+      <Stack.Screen
+        name="LikeMovies"
+        component={LikeMoviesScreen}
+        options={{ title: 'Favorite Movies' }}
+      />
+    </Stack.Navigator>
   );
 }

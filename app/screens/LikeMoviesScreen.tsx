@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StatusBar,
   ActivityIndicator,
@@ -6,10 +6,19 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import styled from 'styled-components/native';
-import { API_KEY, LIKE_MOVIES_URL } from '../config';
 import { Movie } from '../types';
 import { NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getFavoriteMovies } from '../lib/api';
+import { useNetwork } from '../lib/NetworkContext';
+
+interface PendingAction {
+  type: string;
+  movieId: number;
+  status: boolean;
+  timestamp: number;
+}
 
 type LikeMoviesScreenProps = {
   navigation: NavigationProp<{
@@ -18,34 +27,94 @@ type LikeMoviesScreenProps = {
 };
 
 const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
-  const [favorites, setFavorites] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { isConnected } = useNetwork();
+  const [offlineLikedMovies, setOfflineLikedMovies] = useState<Movie[]>([]);
+  
+  // Use React Query to fetch and cache favorite movies
+  const { 
+    data: favorites = [], 
+    isLoading, 
+    refetch 
+  } = useQuery<Movie[]>({
+    queryKey: ['favoriteMovies'],
+    queryFn: getFavoriteMovies,
+    // If offline, continue showing cached data
+    networkMode: 'always',
+  });
 
-  const fetchFavoriteMovies = async () => {
-    try {
-      const response = await fetch(
-        LIKE_MOVIES_URL,
-        {
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'accept': 'application/json'
+  // Check for pending actions and fetch related movie data
+  useEffect(() => {
+    const checkPendingLikes = async () => {
+      const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
+      
+      // Find pending actions where movies are being added to favorites (status=true)
+      const pendingLikes = pendingActions.filter(action => 
+        action.type === 'toggleFavorite' && action.status === true
+      );
+      
+      if (pendingLikes.length === 0) {
+        setOfflineLikedMovies([]);
+        return;
+      }
+      
+      // Get movie details for pending likes
+      const likedMovieIds = pendingLikes.map(action => action.movieId);
+      
+      // Check if we already have these movies in cache
+      const existingMovies: Movie[] = [];
+      
+      // Try to find the movies in the movies cache
+      const cachedMovies = queryClient.getQueryData<Movie[]>(['movies']);
+      if (cachedMovies) {
+        for (const id of likedMovieIds) {
+          const movie = cachedMovies.find(m => Number(m.id) === Number(id));
+          if (movie) existingMovies.push(movie);
+        }
+      }
+      
+      // If we have already viewed these movie details, they should be in cache
+      for (const id of likedMovieIds) {
+        const movieDetails = queryClient.getQueryData<Movie>(['movieDetails', id]);
+        if (movieDetails) {
+          // Check if we already added this movie
+          if (!existingMovies.some(m => m.id === movieDetails.id)) {
+            existingMovies.push(movieDetails);
           }
         }
-      );
-      const data = await response?.json();
-      setFavorites(data?.results);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-      setFavorites([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      }
+      
+      setOfflineLikedMovies(existingMovies);
+    };
+    
+    checkPendingLikes();
+  }, [queryClient]);
 
+  // Refetch favorites when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      fetchFavoriteMovies();
-    }, [])
+      // First check for any pending actions
+      const syncPendingFavoriteActions = async () => {
+        if (!isConnected) return;
+        
+        const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
+        
+        // If we have pending favorite actions, we should invalidate favorites
+        const hasFavoriteChanges = pendingActions.some(action => 
+          action.type === 'toggleFavorite'
+        );
+        
+        if (hasFavoriteChanges) {
+          // Invalidate favorites to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['favoriteMovies'] });
+        } else {
+          // If no pending actions, just refetch to make sure data is fresh
+          refetch();
+        }
+      };
+      
+      syncPendingFavoriteActions();
+    }, [isConnected, queryClient, refetch])
   );
 
   const getImagePath = (path: string) => {
@@ -69,7 +138,22 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
     </MovieCard>
   );
 
-  if (isLoading) {
+  // Combine server favorites with pending offline favorites
+  const combinedFavorites = React.useMemo(() => {
+    // Create a new array from the API favorites
+    const result = [...favorites];
+    
+    // Add offline liked movies that aren't already in the favorites list
+    offlineLikedMovies.forEach(movie => {
+      if (!result.some(fav => fav.id === movie.id)) {
+        result.push(movie);
+      }
+    });
+    
+    return result;
+  }, [favorites, offlineLikedMovies]);
+
+  if (isLoading && combinedFavorites.length === 0) {
     return (
       <LoadingContainer>
         <ActivityIndicator size="large" color={Colors.dark.tint} testID="loading-indicator" />
@@ -82,15 +166,22 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
       <StatusBar barStyle="light-content" />
       <HeaderContainer>
         <HeaderTitle>Favorite Movies</HeaderTitle>
+        {!isConnected && offlineLikedMovies.length > 0 && (
+          <PendingBadge>
+            <PendingText>
+              {offlineLikedMovies.length} pending offline {offlineLikedMovies.length === 1 ? 'change' : 'changes'}
+            </PendingText>
+          </PendingBadge>
+        )}
       </HeaderContainer>
-      {favorites.length === 0 ? (
+      {combinedFavorites.length === 0 ? (
         <EmptyStateContainer>
           <Ionicons name="heart-outline" size={64} color={Colors.dark.hardcore.emptyState} />
           <EmptyText>No favorite movies yet</EmptyText>
         </EmptyStateContainer>
       ) : (
         <FlatList
-          data={favorites}
+          data={combinedFavorites}
           renderItem={renderMovieItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ padding: 8 }}
@@ -119,6 +210,9 @@ export const HeaderContainer = styled.View`
   padding: 16px;
   border-bottom-width: 1px;
   border-bottom-color: ${Colors.dark.hardcore.border};
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 export const EmptyStateContainer = styled.View`
@@ -182,6 +276,18 @@ export const EmptyText = styled.Text`
   color: ${Colors.dark.hardcore.emptyState};
   font-size: 18px;
   margin-top: 16px;
+`;
+
+export const PendingBadge = styled.View`
+  background-color: #f39c12;
+  padding: 4px 8px;
+  border-radius: 12px;
+`;
+
+export const PendingText = styled.Text`
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
 `;
 
 export default LikeMoviesScreen;

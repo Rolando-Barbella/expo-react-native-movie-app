@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -15,10 +15,12 @@ import {
   Roboto_700Bold,
 } from '@expo-google-fonts/roboto';
 import { useFonts } from 'expo-font';
-import { API_KEY } from '../config';
 import { Movie } from '../types';
 import { NavigationProp } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { checkFavoriteStatus, toggleFavorite } from '../lib/api';
+import { useNetwork } from '../lib/NetworkContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,9 +31,65 @@ type DetailScreenProps = {
   route: any;
 };
 
+interface PendingAction {
+  type: string;
+  movieId: number;
+  status: boolean;
+  timestamp: number;
+}
+
 const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   const { movie } = route.params;
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const queryClient = useQueryClient();
+  const { isConnected } = useNetwork();
+
+  // Add this effect to sync pending actions when online
+  React.useEffect(() => {
+    const syncPendingActions = async () => {
+      // Only proceed if we're online
+      if (!isConnected) return;
+      
+      // Get pending actions
+      const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
+      if (pendingActions.length === 0) return;
+      
+      // Process each action
+      let updatedPendingActions = [...pendingActions];
+      for (let i = 0; i < pendingActions.length; i++) {
+        const action = pendingActions[i];
+        if (action.type === 'toggleFavorite') {
+          try {
+            await toggleFavorite(action.movieId, action.status);
+            
+            // Remove from pending list if successful
+            updatedPendingActions = updatedPendingActions.filter(a => 
+              !(a.type === action.type && a.movieId === action.movieId));
+              
+            // Invalidate related queries to refresh data
+            if (action.movieId === movie.id) {
+              queryClient.invalidateQueries({
+                queryKey: ['favoriteStatus', movie.id]
+              });
+            }
+          } catch (error) {
+            console.error('Error syncing pending action:', error);
+            // Keep in the list to retry later
+          }
+        }
+      }
+
+      queryClient.setQueryData<PendingAction[]>(['pendingActions'], updatedPendingActions);
+    };
+    if (isConnected) {
+      syncPendingActions();
+    }
+  }, [isConnected, movie.id, queryClient]);
+
+  // Cache the movie details for potential offline use
+  React.useEffect(() => {
+    // Store movie details in cache for potential offline favoriting
+    queryClient.setQueryData(['movieDetails', movie.id], movie);
+  }, [movie, queryClient]);
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
@@ -39,72 +97,97 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
     Roboto_100Thin_Italic,
   });
 
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/account/21752759/favorite/movies`,
-          {
-            headers: {
-              'Authorization': `Bearer ${API_KEY}`,
-            }
+  const { data: isWishlisted} = useQuery({
+    queryKey: ['favoriteStatus', movie.id],
+    queryFn: () => checkFavoriteStatus(movie.id),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    // If offline, continue showing cached data
+    networkMode: 'always',
+  });
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (newStatus: boolean) => {
+      // Check if we're offline before trying the request
+      if (!isConnected) {
+        const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
+        await queryClient.setQueryData<PendingAction[]>(['pendingActions'], [
+          ...pendingActions,
+          { 
+            type: 'toggleFavorite', 
+            movieId: movie.id, 
+            status: newStatus, 
+            timestamp: Date.now() 
           }
-        );
-        const data = await response.json();
-        const isFavorite = data.results.some((favMovie: Movie) => favMovie.id === movie.id);
-        setIsWishlisted(isFavorite);
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
+        ]);
+        // We'll handle this in the optimistic update without throwing an error
+        return newStatus;
       }
-    };
+      
+      await toggleFavorite(movie.id, newStatus);
+      return newStatus;
+    },
+    // Optimistically update the cache
+    onMutate: async (newStatus) => {
 
-    checkFavoriteStatus();
-  }, [movie.id]);
-
-  const toggleWishlist = async () => {
-    try {
-      const response = await fetch('https://api.themoviedb.org/3/account/21752759/favorite', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-          'accept': 'application/json'
-        },
-        body: JSON.stringify({
-          media_type: "movie",
-          media_id: movie.id,
-          favorite: !isWishlisted
-        })
+      await queryClient.cancelQueries({
+        queryKey: ['favoriteStatus', movie.id]
       });
-
-      if (response.ok) {
-        setIsWishlisted(!isWishlisted);
+      
+      // Save the previous value
+      const previousStatus = queryClient.getQueryData(['favoriteStatus', movie.id]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(['favoriteStatus', movie.id], newStatus);
+      
+      // Show appropriate message based on connection status
+      if (!isConnected) {
         Alert.alert(
-          "Success",
-          `${movie.title} has been ${!isWishlisted ? 'added to' : 'removed from'} favorites`
+          "Saved Offline",
+          `${movie.title} has been ${newStatus ? 'added to' : 'removed from'} favorites and will sync when back online`
         );
       } else {
         Alert.alert(
-          "Error",
-          "Failed to update favorites. Please try again."
+          "Success",
+          `${movie.title} has been ${newStatus ? 'added to' : 'removed from'} favorites`
         );
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
+      // Return previous value in case we need to rollback
+      return { previousStatus };
+    },
+    onError: (error, newStatus, context) => {
+      // Rollback to previous value if mutation fails
+      queryClient.setQueryData(
+        ['favoriteStatus', movie.id],
+        context?.previousStatus
+      );
+      // Show error to user
       Alert.alert(
         "Error",
-        "Something went wrong. Please check your connection and try again."
+        "Failed to update favorites. The change will be retried when you're back online."
       );
-    }
+    },
+    onSettled: () => {
+      // Refetch to ensure data consistency
+      queryClient.invalidateQueries({
+        queryKey: ['favoriteStatus', movie.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['favoriteMovies']
+      });
+    },
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000), // Exponential backoff
+  });
+
+  const toggleWishlist = () => {
+    const newStatus = !isWishlisted;
+    toggleFavoriteMutation.mutate(newStatus);
   };
 
   const getImagePath = (path: string) => {
     return `https://image.tmdb.org/t/p/w500${path}`;
   };
-
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color={Colors.dark.tint} />;
-  }
 
   const getStyleConfig = () => {
     const genre = movie.genre_ids?.[0];
@@ -127,7 +210,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         };
       default:
         return {
-          font: 'SpaceMono',
+          font: 'Roboto_700Bold',
           backgroundColor: '#1e272e',
         };
     }
@@ -164,12 +247,17 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
             active={isWishlisted}
             onPress={toggleWishlist}
             style={{backgroundColor: null}}
+            disabled={toggleFavoriteMutation.isPending}
           >
-            <Ionicons
-              name={isWishlisted ? "heart" : "heart-outline"}
-              size={24}
-              color={isWishlisted ? Colors.dark.hardcore.favorite : Colors.dark.hardcore.text}
-            />
+            {toggleFavoriteMutation.isPending ? (
+              <ActivityIndicator size="small" color={Colors.dark.hardcore.text} />
+            ) : (
+              <Ionicons
+                name={isWishlisted ? "heart" : "heart-outline"}
+                size={24}
+                color={isWishlisted ? Colors.dark.hardcore.favorite : Colors.dark.hardcore.text}
+              />
+            )}
           </IconButton>
         </Row>
 
@@ -272,7 +360,6 @@ export const IconButton = styled.TouchableOpacity`
   background-color: ${(props: { active: boolean; }) => props.active ? `rgba(${parseInt(Colors.dark.hardcore.favorite.slice(1, 3), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(3, 5), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(5, 7), 16)}, 0.2)` : 'rgba(255, 255, 255, 0.1)'};
 `;
 
-
 const styles = StyleSheet.create({
   imageContainer: {
     width: width,
@@ -304,5 +391,3 @@ const styles = StyleSheet.create({
 });
 
 export default DetailScreen;
-
-
