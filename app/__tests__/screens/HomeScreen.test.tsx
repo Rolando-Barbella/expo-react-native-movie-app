@@ -3,6 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import HomeScreen from '../../screens/HomeScreen';
 import { NavigationProp } from '@react-navigation/native';
 import { Genre, Movie } from '@/app/types';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as api from '../../lib/api';
+
+// Mock the API module
+jest.mock('../../lib/api', () => ({
+  getGenres: jest.fn(),
+  getMovies: jest.fn(),
+}));
 
 const mockGenres = [
   { id: 1, name: 'Action' },
@@ -33,10 +41,35 @@ const mockNavigation = {
   Detail: { movie: Movie; genre: Genre };
 }>;
 
+// Mock the network context
+jest.mock('../../lib/NetworkContext', () => ({
+  useNetwork: jest.fn().mockReturnValue({ isConnected: true }),
+  NetworkProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Create a new QueryClient for testing
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      gcTime: Infinity,
+    },
+  },
+});
+
+// Render with all necessary providers
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {component}
+    </QueryClientProvider>
+  );
+};
+
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (global.fetch as jest.Mock) = jest.fn() as jest.Mock;
     // Mock console.error to prevent error logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -47,28 +80,30 @@ describe('HomeScreen', () => {
   });
 
   it('renders loading indicator while fetching data', async () => {
-    (global.fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
+    // Setup API mocks to return promises that never resolve
+    const getGenresMock = api.getGenres as jest.Mock;
+    const getMoviesMock = api.getMovies as jest.Mock;
+    
+    getGenresMock.mockReturnValue(new Promise(() => {}));
+    getMoviesMock.mockReturnValue(new Promise(() => {}));
 
-    render(<HomeScreen navigation={mockNavigation} />);
+    renderWithProviders(<HomeScreen navigation={mockNavigation} />);
 
     expect(screen.getByTestId('loading-indicator')).toBeTruthy();
   });
 
   it('renders genres and movies after successful data fetching', async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ genres: mockGenres }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ results: mockMovies }),
-      });
+    // Setup API mocks to return successful data
+    const getGenresMock = api.getGenres as jest.Mock;
+    const getMoviesMock = api.getMovies as jest.Mock;
+    
+    getGenresMock.mockResolvedValue(mockGenres);
+    getMoviesMock.mockResolvedValue(mockMovies);
   
-    render(<HomeScreen navigation={mockNavigation} />);
+    renderWithProviders(<HomeScreen navigation={mockNavigation} />);
   
     await waitFor(() => {
-      expect(screen.getByTestId('container')).toBeTruthy();
+      expect(screen.queryByTestId('loading-indicator')).toBeNull();
     });
   
     expect(screen.getByText('Action')).toBeTruthy();
@@ -83,15 +118,19 @@ describe('HomeScreen', () => {
   });
 
   it('renders error message when data fetching fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    // Setup API mocks to return errors
+    const getGenresMock = api.getGenres as jest.Mock;
+    const getMoviesMock = api.getMovies as jest.Mock;
+    
+    getGenresMock.mockRejectedValue(new Error('Network error'));
+    getMoviesMock.mockResolvedValue(mockMovies);
 
-    render(<HomeScreen navigation={mockNavigation} />);
+    renderWithProviders(<HomeScreen navigation={mockNavigation} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to load data. Please try again.')).toBeTruthy();
+      expect(screen.getByText(/Network error/)).toBeTruthy();
     });
 
     expect(screen.getByText('Retry')).toBeTruthy();
   });
-
 });

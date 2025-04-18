@@ -10,11 +10,6 @@ import {
 } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Roboto_100Thin_Italic,
-  Roboto_700Bold,
-} from '@expo-google-fonts/roboto';
-import { useFonts } from 'expo-font';
 import { Movie } from '../types';
 import { NavigationProp } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
@@ -46,7 +41,6 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   // Add this effect to sync pending actions when online
   React.useEffect(() => {
     const syncPendingActions = async () => {
-      // Only proceed if we're online
       if (!isConnected) return;
       
       // Get pending actions
@@ -60,11 +54,9 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         if (action.type === 'toggleFavorite') {
           try {
             await toggleFavorite(action.movieId, action.status);
-            
             // Remove from pending list if successful
             updatedPendingActions = updatedPendingActions.filter(a => 
               !(a.type === action.type && a.movieId === action.movieId));
-              
             // Invalidate related queries to refresh data
             if (action.movieId === movie.id) {
               queryClient.invalidateQueries({
@@ -73,11 +65,9 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
             }
           } catch (error) {
             console.error('Error syncing pending action:', error);
-            // Keep in the list to retry later
           }
         }
       }
-
       queryClient.setQueryData<PendingAction[]>(['pendingActions'], updatedPendingActions);
     };
     if (isConnected) {
@@ -87,28 +77,19 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
 
   // Cache the movie details for potential offline use
   React.useEffect(() => {
-    // Store movie details in cache for potential offline favoriting
     queryClient.setQueryData(['movieDetails', movie.id], movie);
   }, [movie, queryClient]);
-
-  const [fontsLoaded] = useFonts({
-    SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
-    Roboto_700Bold,
-    Roboto_100Thin_Italic,
-  });
 
   const { data: isWishlisted} = useQuery({
     queryKey: ['favoriteStatus', movie.id],
     queryFn: () => checkFavoriteStatus(movie.id),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
-    // If offline, continue showing cached data
     networkMode: 'always',
   });
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (newStatus: boolean) => {
-      // Check if we're offline before trying the request
       if (!isConnected) {
         const pendingActions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];
         await queryClient.setQueryData<PendingAction[]>(['pendingActions'], [
@@ -120,10 +101,8 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
             timestamp: Date.now() 
           }
         ]);
-        // We'll handle this in the optimistic update without throwing an error
         return newStatus;
       }
-      
       await toggleFavorite(movie.id, newStatus);
       return newStatus;
     },
@@ -133,14 +112,10 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
       await queryClient.cancelQueries({
         queryKey: ['favoriteStatus', movie.id]
       });
-      
-      // Save the previous value
+
       const previousStatus = queryClient.getQueryData(['favoriteStatus', movie.id]);
-      
-      // Optimistically update the cache
       queryClient.setQueryData(['favoriteStatus', movie.id], newStatus);
       
-      // Show appropriate message based on connection status
       if (!isConnected) {
         Alert.alert(
           "Saved Offline",
@@ -152,7 +127,6 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
           `${movie.title} has been ${newStatus ? 'added to' : 'removed from'} favorites`
         );
       }
-      // Return previous value in case we need to rollback
       return { previousStatus };
     },
     onError: (error, newStatus, context) => {
@@ -161,14 +135,12 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         ['favoriteStatus', movie.id],
         context?.previousStatus
       );
-      // Show error to user
       Alert.alert(
         "Error",
         "Failed to update favorites. The change will be retried when you're back online."
       );
     },
     onSettled: () => {
-      // Refetch to ensure data consistency
       queryClient.invalidateQueries({
         queryKey: ['favoriteStatus', movie.id]
       });
@@ -177,7 +149,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
       });
     },
     retry: 3,
-    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000), // Exponential backoff
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000),
   });
 
   const toggleWishlist = () => {
@@ -188,35 +160,6 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   const getImagePath = (path: string) => {
     return `https://image.tmdb.org/t/p/w500${path}`;
   };
-
-  const getStyleConfig = () => {
-    const genre = movie.genre_ids?.[0];
-  
-    switch (genre) {
-      case 28: // Action
-        return {
-          font: 'SpaceMono',
-          backgroundColor: '#140f21',
-        };
-      case 12: // Adventure
-        return {
-          font: 'Roboto_700Bold',
-          backgroundColor: '#0c1a27',
-        };
-      case 16: // Animation
-        return {
-          font: 'Roboto_100Thin_Italic',
-          backgroundColor: '#1e272e',
-        };
-      default:
-        return {
-          font: 'Roboto_700Bold',
-          backgroundColor: '#1e272e',
-        };
-    }
-  };
-
-  const { font, backgroundColor } = getStyleConfig();
 
   return (
     <Container>
@@ -236,10 +179,10 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         </IconButton>
       </View>
 
-      <StyledScrollView backgroundColor={backgroundColor}>
+      <StyledScrollView>
         <Row>
           <View style={styles.titleContainer}>
-            <Title font={font}>{movie.title}</Title>
+            <Title>{movie.title}</Title>
             <RegularText secondary>{movie.release_date?.split('-')[0]}</RegularText>
           </View>
 

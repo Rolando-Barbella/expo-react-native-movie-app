@@ -3,6 +3,19 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import LikeMoviesScreen from '../../screens/LikeMoviesScreen';
 import { NavigationProp, NavigationContainer } from '@react-navigation/native';
 import { Genre, Movie } from '@/app/types';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as api from '../../lib/api';
+
+// Mock the api functions
+jest.mock('../../lib/api', () => ({
+  getFavoriteMovies: jest.fn(),
+}));
+
+// Mock the network context
+jest.mock('../../lib/NetworkContext', () => ({
+  useNetwork: jest.fn().mockReturnValue({ isConnected: true }),
+  NetworkProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -39,41 +52,50 @@ const mockMovies = [
   },
 ];
 
-const renderWithNavigation = (component: React.ReactElement) => {
+// Create a new QueryClient for each test
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false, // Don't retry failed requests in tests
+      gcTime: Infinity, // Updated from cacheTime to gcTime
+    },
+  },
+});
+
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
   return render(
-    <NavigationContainer>
-      {component}
-    </NavigationContainer>
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        {component}
+      </NavigationContainer>
+    </QueryClientProvider>
   );
 };
 
 describe('<LikeMoviesScreen />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn() as jest.Mock;
   });
 
   it('shows the loading state initially', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ results: mockMovies }),
-    });
+    // Setup the mock to return a promise that never resolves to simulate loading
+    const getFavoriteMoviesMock = api.getFavoriteMovies as jest.Mock;
+    getFavoriteMoviesMock.mockReturnValue(new Promise(() => {}));
 
-    const { getByTestId } = renderWithNavigation(
+    const { getByTestId } = renderWithProviders(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
-    await waitFor(() => {
-      expect(getByTestId('loading-indicator')).toBeTruthy();
-    });
+    
+    expect(getByTestId('loading-indicator')).toBeTruthy();
   });
 
   it('shows empty state when there are no favorite movies', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ results: [] }),
-    });
+    // Setup the mock to return an empty array
+    const getFavoriteMoviesMock = api.getFavoriteMovies as jest.Mock;
+    getFavoriteMoviesMock.mockResolvedValue([]);
   
-    const { getByText } = renderWithNavigation(
+    const { getByText } = renderWithProviders(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
   
@@ -83,12 +105,11 @@ describe('<LikeMoviesScreen />', () => {
   });
 
   it('displays the list of favorite movies', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ results: mockMovies }),
-    });
+    // Setup the mock to return mock movies
+    const getFavoriteMoviesMock = api.getFavoriteMovies as jest.Mock;
+    getFavoriteMoviesMock.mockResolvedValue(mockMovies);
 
-    const { getByText } = renderWithNavigation(
+    const { getByText } = renderWithProviders(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
 
@@ -101,12 +122,11 @@ describe('<LikeMoviesScreen />', () => {
   });
 
   it('navigates to the detail screen when a movie is selected', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ results: mockMovies }),
-    });
+    // Setup the mock to return mock movies
+    const getFavoriteMoviesMock = api.getFavoriteMovies as jest.Mock;
+    getFavoriteMoviesMock.mockResolvedValue(mockMovies);
   
-    const { getByText } = renderWithNavigation(
+    const { getByText } = renderWithProviders(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
   
@@ -126,9 +146,11 @@ describe('<LikeMoviesScreen />', () => {
     const originalConsoleError = console.error;
     console.error = jest.fn();
     
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
+    // Setup the mock to throw an error
+    const getFavoriteMoviesMock = api.getFavoriteMovies as jest.Mock;
+    getFavoriteMoviesMock.mockRejectedValue(new Error('API Error'));
   
-    const { getByText } = renderWithNavigation(
+    const { getByText } = renderWithProviders(
       <LikeMoviesScreen navigation={mockNavigation} />
     );
   
@@ -136,8 +158,6 @@ describe('<LikeMoviesScreen />', () => {
       expect(getByText('No favorite movies yet')).toBeTruthy();
     });
   
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    
     // Restore original console.error
     console.error = originalConsoleError;
   });
