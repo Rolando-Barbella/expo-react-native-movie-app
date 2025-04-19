@@ -128,7 +128,7 @@ describe('HomeScreen', () => {
     renderWithProviders(<HomeScreen navigation={mockNavigation} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Network error/)).toBeTruthy();
+      expect(screen.getByText(/No data available. Please check your connection./)).toBeTruthy();
     });
 
     expect(screen.getByText('Retry')).toBeTruthy();

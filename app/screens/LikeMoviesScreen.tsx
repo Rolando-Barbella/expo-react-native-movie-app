@@ -123,7 +123,7 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
       {processedFavorites.length === 0 ? (
         <EmptyStateContainer>
           <Ionicons name="heart-outline" size={64} color={Colors.dark.hardcore.emptyState} />
-          <EmptyText>No favorite movies yet</EmptyText>
+          <EmptyText testID="loading-indicator">No favorite movies yet</EmptyText>
         </EmptyStateContainer>
       ) : (
         <FlatList
