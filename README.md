@@ -1,6 +1,9 @@
 # Movie app 🎬
 
-An app that displays a list of movies, like and dislike them, it works smooth on Android and IOS, this is an [Expo](https://expo.dev) react native project.
+An app that displays a list of movies, like and dislike them, with even offline functionlity that works smoothly on Android and IOS. 
+
+This is an [Expo](https://expo.dev) react native project.
+
 
 ![screen](https://raw.githubusercontent.com/Rolando-Barbella/expo-react-native-movie-app/main/assets/images/image-3.png)
 
