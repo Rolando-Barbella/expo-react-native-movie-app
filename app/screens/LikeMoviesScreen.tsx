@@ -41,7 +41,7 @@ const LikeMoviesScreen = ({ navigation }: LikeMoviesScreenProps) => {
     }
   }, [favorites, queryClient]);
 
-  // Update pending actions when the screen is focused
+
   useFocusEffect(
     React.useCallback(() => {
       const actions = queryClient.getQueryData<PendingAction[]>(['pendingActions']) || [];

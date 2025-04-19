@@ -6,7 +6,6 @@ import { Genre, Movie } from '@/app/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as api from '../../lib/api';
 
-// Mock the api functions
 jest.mock('../../lib/api', () => ({
   getFavoriteMovies: jest.fn(),
 }));

@@ -7,7 +7,6 @@ interface NetworkContextType {
   showOnlineBanner: boolean;
 }
 
-// Create context with default values
 export const NetworkContext = createContext<NetworkContextType>({
   isConnected: true,
   showOnlineBanner: false,
