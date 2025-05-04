@@ -73,6 +73,7 @@ export const checkFavoriteStatus = async (movieId: number): Promise<boolean> => 
     );
     if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
+    // @ts-ignore
     return data.results.some((favMovie: Movie) => favMovie.id === movieId);
   } catch (error) {
     console.error('Error checking favorite status:', error);

@@ -6,9 +6,12 @@ import {
   Dimensions,
   StatusBar,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity
 } from 'react-native';
-import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Movie, PendingAction } from '../types';
 import { NavigationProp } from '@react-navigation/native';
@@ -114,7 +117,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
   };
 
   return (
-    <Container>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.imageContainer}>
         <Image
@@ -123,25 +126,26 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
           resizeMode="cover"
         />
         <View style={styles.overlay} />
-        <IconButton
-          style={styles.iconButton}
+        <TouchableOpacity
+          style={[styles.iconButton, { position: 'absolute', top: 16, left: 16 }]}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={Colors.dark.hardcore.text} />
-        </IconButton>
+        </TouchableOpacity>
       </View>
 
-      <StyledScrollView>
-        <Row>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.row}>
           <View style={styles.titleContainer}>
-            <Title>{movie.title}</Title>
-            <RegularText secondary>{movie.release_date?.split('-')[0]}</RegularText>
+            <Text style={styles.title}>{movie.title}</Text>
+            <Text style={[styles.regularText, styles.secondaryText]}>{movie.release_date?.split('-')[0]}</Text>
           </View>
 
-          <IconButton
-            active={isWishlisted}
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: isWishlisted ? 
+              `rgba(${parseInt(Colors.dark.hardcore.favorite.slice(1, 3), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(3, 5), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(5, 7), 16)}, 0.2)` : 
+              'rgba(255, 255, 255, 0.1)' }]}
             onPress={toggleWishlist}
-            style={{backgroundColor: null}}
             disabled={toggleFavoriteMutation.isPending}
           >
             {toggleFavoriteMutation.isPending ? (
@@ -153,10 +157,10 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
                 color={isWishlisted ? Colors.dark.hardcore.favorite : Colors.dark.hardcore.text}
               />
             )}
-          </IconButton>
-        </Row>
+          </TouchableOpacity>
+        </View>
 
-        <Row>
+        <View style={styles.row}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {[...Array(5)].map((_, index) => {
               const rating = movie.vote_average / 2;
@@ -171,91 +175,83 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
                 />
               );
             })}
-            <RegularText style={{ marginLeft: 4 }}>{movie.vote_average?.toFixed(1)} / 10</RegularText>
+            <Text style={[styles.regularText, { marginLeft: 4 }]}>{movie.vote_average?.toFixed(1)} / 10</Text>
           </View>
-        </Row>
+        </View>
 
-        <Section>
-          <SectionTitle>Overview</SectionTitle>
-          <BodyText>{movie.overview}</BodyText>
-        </Section>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={styles.bodyText}>{movie.overview}</Text>
+        </View>
 
-        <Section>
-          <SectionTitle>Additional Information</SectionTitle>
-          <Row>
-            <RegularText secondary>Original Title:</RegularText>
-            <RegularText>{movie.original_title}</RegularText>
-          </Row>
-          <Row>
-            <RegularText secondary>Popularity:</RegularText>
-            <RegularText>{movie.popularity?.toFixed(0)}</RegularText>
-          </Row>
-          <Row>
-            <RegularText secondary>Vote Count:</RegularText>
-            <RegularText>{movie.vote_count}</RegularText>
-          </Row>
-        </Section>
-      </StyledScrollView>
-    </Container>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Additional Information</Text>
+          <View style={styles.row}>
+            <Text style={[styles.regularText, styles.secondaryText]}>Original Title:</Text>
+            <Text style={styles.regularText}>{movie.original_title}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={[styles.regularText, styles.secondaryText]}>Popularity:</Text>
+            <Text style={styles.regularText}>{movie.popularity?.toFixed(0)}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={[styles.regularText, styles.secondaryText]}>Vote Count:</Text>
+            <Text style={styles.regularText}>{movie.vote_count}</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-export const Container = styled.SafeAreaView`
-  flex: 1;
-  background-color: ${Colors.dark.hardcore.primary};
-`;
-
-const StyledScrollView = styled.ScrollView`
-    flex: 1;
-    padding: 16px;
-    background-color: ${(props: { backgroundColor: string }) => props.backgroundColor};
-  `;
-
-export const Section = styled.View`
-  margin-bottom: 24px;
-`;
-
-export const Row = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  padding-vertical: 8px;
-  border-bottom-width: 1px;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-`;
-
-export const Title = styled.Text`
-  font-size: 24px;
-  font-weight: bold;
-  color: ${Colors.dark.hardcore.text};
-  margin-bottom: 4px;
-  ${(props: { font: string; }) => props.font && `font-family: ${props.font}`};
-`;
-
-export const SectionTitle = styled.Text`
-  font-size: 18px;
-  font-weight: 600;
-  color: ${Colors.dark.hardcore.text};
-  margin-bottom: 8px;
-`;
-
-export const RegularText = styled.Text`
-  font-size: 16px;
-  color: ${(props: { secondary: string; }) => props.secondary ? Colors.dark.hardcore.textSecondary : Colors.dark.hardcore.text};
-`;
-
-export const BodyText = styled.Text`
-  font-size: 16px;
-  line-height: 24px;
-  color: ${Colors.dark.hardcore.text};
-`;
-
-export const IconButton = styled.TouchableOpacity`
-  padding: 12px;
-  border-radius: 25px;
-  background-color: ${(props: { active: boolean; }) => props.active ? `rgba(${parseInt(Colors.dark.hardcore.favorite.slice(1, 3), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(3, 5), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(5, 7), 16)}, 0.2)` : 'rgba(255, 255, 255, 0.1)'};
-`;
-
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.dark.hardcore.primary,
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.dark.hardcore.text,
+    marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.dark.hardcore.text,
+    marginBottom: 8,
+  },
+  regularText: {
+    fontSize: 16,
+    color: Colors.dark.hardcore.text,
+  },
+  secondaryText: {
+    color: Colors.dark.hardcore.textSecondary,
+  },
+  bodyText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: Colors.dark.hardcore.text,
+  },
+  iconButton: {
+    padding: 12,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
   imageContainer: {
     width: width,
     height: height * 0.3,
@@ -273,16 +269,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  iconButton: { position: 'absolute', top: 16, left: 16 }
 });
 
 export default DetailScreen;

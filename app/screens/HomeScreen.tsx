@@ -1,6 +1,5 @@
 import React from 'react';
-import { ActivityIndicator} from 'react-native';
-import styled from 'styled-components/native';
+import { ActivityIndicator, ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MovieCarousel from '../../components/MovieCarusel';
 import { NavigationProp } from '@react-navigation/native';
 import { Genre, Movie } from '../types';
@@ -44,38 +43,38 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
    // If we have cached data but no network, show cached data with warning
    if ((!genresData?.length || !moviesData?.length) && !isLoading) {
     return (
-      <CenterContainer testID='container'>
-        <ErrorText>No data available. Please check your connection.</ErrorText>
-        <RetryButton onPress={refetchAll}>
-          <RetryText>Retry</RetryText>
-        </RetryButton>
-      </CenterContainer>
+      <View style={styles.centerContainer} testID='container'>
+        <Text style={styles.errorText}>No data available. Please check your connection.</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refetchAll}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
   if (isLoading) {
     return (
-      <CenterContainer testID='container'>
+      <View style={styles.centerContainer} testID='container'>
         <ActivityIndicator size="large" color={Colors.dark.tint} testID='loading-indicator'/>
-      </CenterContainer>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <CenterContainer testID='container'>
-        <ErrorText>{
+      <View style={styles.centerContainer} testID='container'>
+        <Text style={styles.errorText}>{
           error.message || 'Failed to load data. Please try again.'
-        }</ErrorText>
-        <RetryButton onPress={refetchAll}>
-          <RetryText>Retry</RetryText>
-        </RetryButton>
-      </CenterContainer>
+        }</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refetchAll}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
   return (
-    <Container testID='container'>
+    <ScrollView style={styles.container} testID='container'>
       {genresData?.map((genre: Genre) => {
         const genreMovies = moviesData?.filter((movie: Movie) => movie.genre_ids.includes(genre.id)) || [];
         return (
@@ -87,38 +86,36 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
           />
         );
       })}
-    </Container>
+    </ScrollView>
   );
 };
 
-const Container = styled.ScrollView`
-  flex: 1;
-  background-color: ${Colors.dark.hardcore.primary};
-`;
-
-const CenterContainer = styled.View`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  background-color: ${Colors.dark.hardcore.primary};
-`;
-
-const ErrorText = styled.Text`
-  color: ${Colors.dark.hardcore.text};
-  font-size: 16px;
-  text-align: center;
-  margin-bottom: 20px;
-`;
-
-const RetryButton = styled.TouchableOpacity`
-  padding: 10px;
-  background-color: ${Colors.dark.tint};
-  border-radius: 5px;
-`;
-
-const RetryText = styled.Text`
-  color: ${Colors.dark.hardcore.text};
-  font-size: 16px;
-`;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.dark.hardcore.primary,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.hardcore.primary,
+  },
+  errorText: {
+    color: Colors.dark.hardcore.text,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    padding: 10,
+    backgroundColor: Colors.dark.tint,
+    borderRadius: 5,
+  },
+  retryText: {
+    color: Colors.dark.hardcore.text,
+    fontSize: 16,
+  },
+});
 
 export default HomeScreen;
