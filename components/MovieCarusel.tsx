@@ -18,6 +18,10 @@ interface MovieCarouselProps {
 }
 
 const MovieCarousel: React.FC<MovieCarouselProps> = ({ genre, movies, navigation}) => {
+  if (!movies || movies.length === 0) {
+    return null;
+  }
+  
   const renderMovie = ({ item: movie }: { item: MovieCarousel }) => (
     <TouchableOpacity
       style={styles.movieCard}

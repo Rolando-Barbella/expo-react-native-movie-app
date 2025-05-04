@@ -19,7 +19,7 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
   } = useQuery<Genre[]>({
     queryKey: ['genres'],
     queryFn: getGenres,
-    select: (data) => data.slice(0, 3),
+    select: (data) => data.slice(0, 4),
   });
 
   const {
@@ -76,14 +76,17 @@ const HomeScreen = ({ navigation }: { navigation: NavigationProp<{
 
   return (
     <Container testID='container'>
-      {genresData?.map((genre: Genre) => (
-        <MovieCarousel
-          key={genre.id}
-          genre={genre}
-          movies={moviesData?.filter((movie: Movie) => movie.genre_ids.includes(genre.id)) || []}
-          navigation={navigation}
-        />
-      ))}
+      {genresData?.map((genre: Genre) => {
+        const genreMovies = moviesData?.filter((movie: Movie) => movie.genre_ids.includes(genre.id)) || [];
+        return (
+          <MovieCarousel
+            key={genre.id}
+            genre={genre}
+            movies={genreMovies}
+            navigation={navigation}
+          />
+        );
+      })}
     </Container>
   );
 };
