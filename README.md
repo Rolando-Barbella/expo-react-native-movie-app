@@ -1,6 +1,8 @@
 # Movie app 🎬
 
-An app that displays a list of movies, like and dislike them, with even offline functionlity that works smoothly on Android and IOS. 
+An app that displays a list of movies, like and dislike them, with even offline functionlity that works smoothly on Android and IOS.
+
+The API movies is achive thanks to [TMDB](https://developer.themoviedb.org/docs/getting-started)
 
 This is an [Expo](https://expo.dev) react native project.
 
