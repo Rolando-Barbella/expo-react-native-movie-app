@@ -14,6 +14,7 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    transparent: 'rgba(255, 255, 255, 0.1)',
     hardcore: {
       primary: '#000000',
       secondary: '#111111',
@@ -43,6 +44,7 @@ export const Colors = {
       card: '#111111',
       emptyState: '#666666',
       favorite: '#ff4757',
+      transparent: 'rgba(255, 255, 255, 0.1)',
     },
   },
 };

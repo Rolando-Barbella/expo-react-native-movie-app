@@ -127,7 +127,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         />
         <View style={styles.overlay} />
         <TouchableOpacity
-          style={[styles.iconButton, { position: 'absolute', top: 16, left: 16 }]}
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={Colors.dark.hardcore.text} />
@@ -142,9 +142,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
           </View>
 
           <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: isWishlisted ? 
-              `rgba(${parseInt(Colors.dark.hardcore.favorite.slice(1, 3), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(3, 5), 16)}, ${parseInt(Colors.dark.hardcore.favorite.slice(5, 7), 16)}, 0.2)` : 
-              'rgba(255, 255, 255, 0.1)' }]}
+            style={styles.iconButton}
             onPress={toggleWishlist}
             disabled={toggleFavoriteMutation.isPending}
           >
@@ -161,7 +159,7 @@ const DetailScreen = ({ route, navigation }: DetailScreenProps) => {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={styles.starContainer}>
             {[...Array(5)].map((_, index) => {
               const rating = movie.vote_average / 2;
               const starValue = index + 1;
@@ -221,7 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: Colors.light.transparent,
   },
   title: {
     fontSize: 24,
@@ -250,7 +248,14 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 12,
     borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  backButton: {
+    padding: 12,
+    borderRadius: 25,
+    position: 'absolute', 
+    top: 16, 
+    left: 16,
+    backgroundColor: Colors.dark.hardcore.transparent,
   },
   imageContainer: {
     width: width,
@@ -264,6 +269,10 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   titleContainer: {
     flex: 1,
